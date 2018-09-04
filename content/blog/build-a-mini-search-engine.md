@@ -212,7 +212,9 @@ You can manually extract features for a certain query by making a curl request. 
 ```
 curl http://localhost:8983/solr/nutch/select?indent=on&q=hello+world&wt=json&fl=title,score,[features%20efi.query=hello+world]
 ```
-Note that you will need to include the query both in its default position, and as a parameter passed on to the feature generator. This is because some of our features use `query` as component of their calculation.
+Note that you will need to include the query both in its default position, and as a parameter passed on to the feature generator. This is because some of our features require the parameter `query` for their calculation.
+
+Before you can train a ranker to learn to rank, you'll need to 
 
 You can also hit the `features` endpoint on rate_srv to generate a dump of training data in the format required by our classifier. It will append any Google results not present in the index to a seed file (`care-rate/src/rate_srv/seeds/temp_seeds.txt`) in `rate_srv`'s working directory. You can choose to crawl and index these urls at this point.
 Make sure to save the generated features in `data/training.dat` to be used during training.
