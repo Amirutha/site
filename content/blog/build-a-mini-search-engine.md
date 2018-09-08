@@ -201,12 +201,12 @@ We can now upload these features to Solr:
 curl -XPUT 'http://localhost:8983/solr/nutch/schema/feature-store' --data-binary "@./data/features.json" -H 'Content-type:application/json'
 ```
 
-If you're ever dissatisfied with your feature-set, they can be deleted using a http request including the store name specified in `features.json`. In this case it is `myfeature_store`.
+If you're ever dissatisfied with your feature-set, it can be deleted using a http request including the store name specified in `features.json`. In this case it is `myfeature_store`.
 ```
 curl -XDELETE 'http://localhost:8983/solr/nutch/schema/feature-store/myfeature_store'
 ```
 
-### Extract features
+### Feature extraction and Data annotation
 
 You can manually extract features for a certain query by making a curl request. For example, for the query 'hello world':
 ```
@@ -214,23 +214,28 @@ curl http://localhost:8983/solr/nutch/select?indent=on&q=hello+world&wt=json&fl=
 ```
 Note that you will need to include the query both in its default position, and as a parameter passed on to the feature generator. This is because some of our features require the parameter `query` for their calculation.
 
-Before you can train a ranker to learn to rank, you'll need to 
-
-You can also hit the `features` endpoint on rate_srv to generate a dump of training data in the format required by our classifier. It will append any Google results not present in the index to a seed file (`care-rate/src/rate_srv/seeds/temp_seeds.txt`) in `rate_srv`'s working directory. You can choose to crawl and index these urls at this point.
-Make sure to save the generated features in `data/training.dat` to be used during training.
-e.g.
+Before you can train a ranker to learn to rank, you'll need to prepare a testing and training set. This is typically done by eliciting user feeback via a rating system, or inferring preferred ranking by tracking the links users click end up clicking on. For the purpose of this article, I've put together a small Python script that pulls the features for a number of queries generates tab-delimited files whose rankings the user can modify and later use as training data. I'll illustrate this with a small example:
 ```
-# "+" is interpreted as " ". Alternatively use "%20"
-curl "http://localhost:9000/features?q=dementia&q=dementia+toronto&q=dementia+money" -o data/training.data
+python data\_gen.py -n 10 -q 'Hello', 'Hello+World' -o raw.dat
+
+cat raw.dat
+0 1.232 121.32
+1 1.23  1.121
 ```
 
-Download and extract the classifier we'll be using (SVM_rank):
+The first column indicates the default ranking of the result, which you can modify to your pleasing. Make sure to save the final list of results with their rankings and features in `data/training.dat` to be used during training.
+
+### Training our Ranker
+Learning to rank is a growing field, and there are a lot of high quality ranking algorithms to choose from. I'll only cover the rather simple SVM-Rank, because it is one of the model types that Solr supports out of the box. It also ingests data in the same format required by [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/) and [LightGBM](https://github.com/Microsoft/LightGBM), the first providing mature implementations of a number of common ranking algorithms, and the latter providing a number of high-quality decision-tree based algorithms (With the added bonus of being actively maintained by Microsoft).
+<!-- Flesh this out later -->
+
+Download, extract and build the classifier we'll be using (SVM_rank):
 ```
 wget http://download.joachims.org/svm_rank/current/svm_rank.tar.gz && mkdir svm_rank && tar xzf svm_rank.tar.gz -C svm_rank && cd svm_rank && make
 ```
-Alternatively, you can just download the appropriate precompiled binary from [the project website](https://www.cs.cornell.edu/people/tj/svm_light/svm_rank.html).
+Alternatively, it's likely easiest to just download the appropriate precompiled binary from [the project website](https://www.cs.cornell.edu/people/tj/svm_light/svm_rank.html).
 
-Run `construct_model.py` to generate a `data/model.json` file that you can then upload using:
+Once again, I've put together a small script that will train the model using the training data you put together (`data/training.dat`). It will generate a model file (`data/model.json`) that you can upload to the Solr server:
 ```
 curl -XPUT 'http://localhost:8983/solr/nutch/schema/model-store' --data-binary "@./data/model.json" -H 'Content-type:application/json'
 ```
@@ -240,8 +245,7 @@ You can now view the reranked results via:
 curl http://192.168.0.9:8983/solr/nutch/query?q=dementia&rq={!ltr%20model=mymodel%20efi.query=dementia}&fl=url,title,[features]
 ```
 
-It may be useful to contrast these to Solr's vanilla ranking and the Google results.
+It may be useful to contrast these to Solr's vanilla ranking:
 ```
-curl http://192.168.0.9:8983/solr/nutch/query?q=dementia&fl=url,title
-curl https://www.googleapis.com/customsearch/v1?q=\%22dementia\%22&start=1&key=<your-api-key>&cx=<your-cx>
+curl http://localhost:8983/solr/nutch/query?q=dementia&fl=url,title
 ```
