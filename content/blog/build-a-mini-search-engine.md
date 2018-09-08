@@ -8,7 +8,7 @@ A research project [I spent time working on during my master's](http://www.acade
 
 I therefore set about finding a workflow for retrieving decent results for search queries made against a predefined list of websites. That workflow is described here: Hopefully providing a useful reference for how to go about setting up a small search engine using fopen-source tools. 
 
-## Setting up our Crawler<br><p>Source: [Nutch Tutorial](https://wiki.apache.org/nutch/NutchTutorial)<p>
+## Setting up our Crawler<br><p>Reference: [Nutch Tutorial](https://wiki.apache.org/nutch/NutchTutorial)<p>
 
 A crawler mostly does what its name suggests. It visits pages, consumes their resources, proceeds to visit all the websites that they link to, and then repeats the cycle until a specified crawl depth is reached. [Apache Nutch](https://nutch.apache.org) is one of the more mature open-source crawlers currently available. While it's not too difficult to write a simple crawler from scratch, Apache Nutch is tried and tested, and has the advantage of being closely integrated with Solr (The search platform we'll be using).
 
@@ -55,7 +55,7 @@ If you're reading this, you almost definitely are not interested in indexing the
 
 You can also exert finer control by configuring a regular expression filter (`nutch/conf/regex-urlfilter.txt`) that will let you limit Nutch's exploration. (See [this](https://wiki.apache.org/nutch/NutchTutorial#A.28Optional.29_Configure_Regular_Expression_Filters) page for more details)
 
-## Setting up Solr<br><p>Source: [Nutch tutorial](https://wiki.apache.org/nutch/NutchTutorial#Setup_Solr_for_search)</p>
+## Setting up Solr<br><p>Reference: [Nutch tutorial](https://wiki.apache.org/nutch/NutchTutorial#Setup_Solr_for_search)</p>
 
 [Apache Solr](https://solr.apache.org) is responsible for more than just maintaining a full-text index of the content that our crawler scrapes up. It also handles search queries, supporting a broad range of fairly sophisticated [query parsers](https://lucene.apache.org/solr/guide/6_6/query-syntax-and-parsing.html). Last of all, it is responsible for reordering the retrieved search results so that the most relevant results show up first.
 
@@ -136,7 +136,7 @@ However, linguistic features still serve as good indicators of a documents relev
 
 It's worth noting that I can only provide a brief summary, and I would recommend [this](https://berlinbuzzwords.de/17/session/apache-solr-learning-rank-win) talk by Bloomberg for readers seeking a more detailed look at of reranking with Solr.
 
-## Setup Reranker<br><p>Source: [Solr LTR Tutorial](https://lucene.apache.org/solr/guide/6_6/learning-to-rank.html)</p>
+## Setup Reranker<br><p>Reference: [Solr LTR Tutorial](https://lucene.apache.org/solr/guide/6_6/learning-to-rank.html)</p>
 
 ### Define and upload features
 Define the features that Solr will use to rank retrieved search results, and save them in a file `data/features.json`. An example is provided below:
@@ -210,11 +210,12 @@ curl -XDELETE 'http://localhost:8983/solr/nutch/schema/feature-store/myfeature_s
 
 You can manually extract features for a certain query by making a curl request. For example, for the query 'hello world':
 ```
-curl http://localhost:8983/solr/nutch/select?indent=on&q=hello+world&wt=json&fl=title,score,[features%20efi.query=hello+world]
+# -g (-globoff) ensures that curly and square brackets aren't ignored
+curl -g 'http://localhost:8983/solr/nutch/select?indent=on&q=hello+world&wt=json&fl=title,score,[features%20efi.query=hello+world]'
 ```
 Note that you will need to include the query both in its default position, and as a parameter passed on to the feature generator. This is because some of our features require the parameter `query` for their calculation.
 
-Before you can train a ranker to learn to rank, you'll need to prepare a testing and training set. This is typically done by eliciting user feeback via a rating system, or inferring preferred ranking by tracking the links users click end up clicking on. For the purpose of this article, I've put together a small Python script that pulls the features for a number of queries generates tab-delimited files whose rankings the user can modify and later use as training data. I'll illustrate this with a small example:
+Before you can train a ranker to learn to rank, you'll need to prepare a testing and training set. This is typically done by eliciting user feeback via a rating system, or inferring preferred ranking by tracking the links users end up clicking on. For the purpose of this article, I've put together a small Python script that pulls the features for a number of queries generates tab-delimited files whose rankings the user can modify and later use as training data. I'll illustrate this with a small example:
 ```
 python data\_gen.py -n 10 -q 'Hello', 'Hello+World' -o raw.dat
 
@@ -226,9 +227,9 @@ cat raw.dat
 The first column indicates the default ranking of the result, which you can modify to your pleasing. Make sure to save the final list of results with their rankings and features in `data/training.dat` to be used during training.
 
 ### Training our Ranker
-Learning to rank is a growing field, and there are a lot of high quality ranking algorithms to choose from. I'll only cover the rather simple SVM-Rank, because it is one of the model types that Solr supports out of the box. It also ingests data in the same format required by [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/) and [LightGBM](https://github.com/Microsoft/LightGBM), the first providing mature implementations of a number of common ranking algorithms, and the latter providing a number of high-quality decision-tree based algorithms (With the added bonus of being actively maintained by Microsoft).
-<!-- Flesh this out later -->
+Learning to rank is a growing field, and there are a lot of high quality ranking algorithms to choose from. I'll only cover the rather simple SVM-Rank, because it is one of the model types that Solr supports out of the box. Fortunately, SVM-Rank uses the same data format required by [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/) and Microsoft's [LightGBM](https://github.com/Microsoft/LightGBM), both of which provide high quality open-source implementations of rankers that employ Multiple Additive Regression Trees (The other model type with out of the box support from Solr).
 
+<!-- Anything to say here? -->
 Download, extract and build the classifier we'll be using (SVM_rank):
 ```
 wget http://download.joachims.org/svm_rank/current/svm_rank.tar.gz && mkdir svm_rank && tar xzf svm_rank.tar.gz -C svm_rank && cd svm_rank && make
@@ -242,7 +243,7 @@ curl -XPUT 'http://localhost:8983/solr/nutch/schema/model-store' --data-binary "
 
 You can now view the reranked results via:
 ```
-curl http://192.168.0.9:8983/solr/nutch/query?q=dementia&rq={!ltr%20model=mymodel%20efi.query=dementia}&fl=url,title,[features]
+curl -g 'http://localhost:8983/solr/nutch/query?q=dementia&rq={!ltr%20model=mymodel%20efi.query=dementia}&fl=url,title,[features]'
 ```
 
 It may be useful to contrast these to Solr's vanilla ranking:
