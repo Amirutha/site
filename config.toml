@@ -54,7 +54,7 @@ writing                = "//muuo.me"
 lang                   = "en"
 linkedin               = "//linkedin.com/in/muuo"
 noshowreadtime         = false                         # if true, don't show "<x> minutes read" in posts
-selfintro              = "Computational Linguist, Engineer & Human... in the rough." # appears in the site header when set to a non-empty string
+selfintro              = "Computational Linguist, Engineer & Human in the rough." # appears in the site header when set to a non-empty string
 #twitter                = "//twitter.com/x2a_io"
 
 highlightjs            = true

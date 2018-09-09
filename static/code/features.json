@@ -1,0 +1,48 @@
+[ 
+   {
+    "store": "myfeature_store",
+    "name" : "originalScore",
+    "class" : "org.apache.solr.ltr.feature.OriginalScoreFeature",
+    "params" : {}
+   },
+   {
+    "store": "myfeature_store",
+    "name" : "titleLength",
+    "class" : "org.apache.solr.ltr.feature.FieldLengthFeature",
+    "params" : {
+   	"field":"title" 
+     }
+   },
+   {
+    "store": "myfeature_store",
+    "name" : "contentLength",
+    "class" : "org.apache.solr.ltr.feature.FieldLengthFeature",
+    "params" : {
+   	"field":"content" 
+     }
+   }, 
+   {
+   "store": "myfeature_store",
+   "name": "titleScore",
+   "class": "org.apache.solr.ltr.feature.SolrFeature",
+   "params": {
+	   "q":"{!dismax qf=title} ${query}"
+   }
+   },
+   {
+   "store": "myfeature_store",
+   "name": "contentScore",
+   "class": "org.apache.solr.ltr.feature.SolrFeature",
+   "params": {
+	   "q":"{!dismax qf=content} ${query}"
+   }
+   }, 
+   {
+   "store": "myfeature_store",
+   "name": "freshness",
+   "class": "org.apache.solr.ltr.feature.SolrFeature",
+   "params" : {
+           "q" : "{!func}recip( ms(NOW, lastModified), 3.16e-11, 1, 1)"
+   }
+   }
+]
