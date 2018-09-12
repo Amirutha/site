@@ -1,5 +1,5 @@
-#baseurl             = "https://www.cs.toronto.edu/~muuo"
-baseurl             = "http://localhost"
+baseurl             = "https://www.cs.toronto.edu/~muuo/"
+#baseurl             = "http://localhost"
 builddrafts         = false
 canonifyurls        = true
 contentdir          = "content"
@@ -19,19 +19,19 @@ blog  = "blog/:slug/"
 name                   = "Blog"
 weight                 = -120
 identifier             = "blog"
-url                    = "/blog/"
+url                    = "blog/"
 
 [[menu.main]]
 name                   = "Research"
 weight                 = -110
 identifier             = "research"
-url                    = "/research/"
+url                    = "research/"
 
 [[menu.main]]
 name                   = "About"
 weight                 = -80
 identifier             = "about"
-url                    = "/about/"
+url                    = "about/"
 
 
 [params]
