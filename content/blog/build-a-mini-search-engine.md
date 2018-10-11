@@ -204,7 +204,7 @@ Define the features that Solr will use to rank retrieved search results, and sav
 ```
 
 <center>
-<img src="/img/save.svg" style="margin:0px;vertical-align: text-bottom;" alt="Download" width=24 height=auto> [features.json](/code/features.json)
+<img src="/img/save.svg" style="margin:0px;vertical-align: text-bottom;" alt="Download" width=24 height=auto> [features.json](/code/search/features.json)
 </center>
 
 1. `originalScore` is the output Solr's default scoring function. This score is a measure of how similar the document is to the query. This is typically calculated using the [BM25 ranking function](https://en.wikipedia.org/wiki/Okapi_BM25).
@@ -234,7 +234,7 @@ Note that you will need to include the query both in its default position, and a
 Before you can train a ranker to learn to rank, you'll need to prepare a testing and training set. This is typically done by eliciting user feeback via a rating system, or inferring preferred ranking by tracking the links users end up clicking on. For the purpose of this article, I've put together a small Python script that pulls the features for a number of queries and generates a file that can later be used in training a ranking algorithm, after the user has edited each document's ranking to match their preferences.
 
 <center>
-<img src="/img/save.svg" style="margin:0px;vertical-align: text-bottom;" alt="Download" width=24 height=auto> [data_gen.py](/code/data_gen.py)
+<img src="/img/save.svg" style="margin:0px;vertical-align: text-bottom;" alt="Download" width=24 height=auto> [data_gen.py](/code/search/data_gen.py)
 </center>
 
 I'll illustrate how to use it with a small example. Invoking:
@@ -274,7 +274,7 @@ Alternatively (and more conveniently), download the appropriate pre-compiled bin
 Once again, I've put together a small script that will train the model using the training data you put together (`training.dat`). Note that it assumes that you use the feature-set we defined above. If you change your features, make sure to inspect `train_model.py` and modify the variable `model_template` to match your feature-set.
 
 <center>
-<img src="/img/save.svg" style="margin:0px;vertical-align: text-bottom;" alt="Download" width=24 height=auto> [train_model.py](/code/train_model.py)
+<img src="/img/save.svg" style="margin:0px;vertical-align: text-bottom;" alt="Download" width=24 height=auto> [train_model.py](/code/search/train_model.py)
 </center>
 
 Invoking it as demonstrated below will generate a model file (`model.json`) that you can upload to the Solr server:
