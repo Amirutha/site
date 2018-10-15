@@ -11,8 +11,29 @@ draft: true
     border: 2px double #aaa;
     border-radius: 5px;
 }
+.editor {
+    margin:auto;
+    margin-bottom:1em;
+    width: 60%;
+    border: 2px double #aaa;
+    border-radius: 5px;
+    font-size: 12px;
+    height: inherit;
+}
+.column {
+  width: 50%;
+  float: left;
+}
+.row {
+  height: 200px;
+}
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
 @media (max-width: 600px) {
-  .term {
+  .term .editor {
       width: 90%;
   }
 }
@@ -87,8 +108,11 @@ I won't go into the details of implementation here: So if you aren't already fam
 
 The rules we'll be using for the rest of this article are listed in the sandbox below. Feel free to play around with them and see the effect they have on the parser's results.
 
-TODO: Add Sandbox here!
-
+<div class="row">
+<div class="editor column" id="examples"></div>
+<div class="term column" id="thingy_js"></div>
+</div>
+<p>
 ## Handling Ambiguity
 
 Dealing with **ambiguity** is one of the biggest challenges of computational linguistics, and indeed, syntactic parsing is no exception. If you messed around with the sandbox above, you'll have noticed that certain sentences (like `"minus three plus two"` or `"four times two plus one"`) produce more than one valid parse. The problem is that many sentences in natural language have multiple grammatically correct but semantically unreasonable parses.
@@ -109,15 +133,14 @@ TODO: Add weight sandbox
 
 Obviously, it's rather tedious to manually assign weights to each feature, even for a smaller feature set as our own. We should therefore devise some way of learning the weights automatically from training data rather than setting them ourselves.
 
-In [Bringing machine learning and compositional semantics together](https://web.stanford.edu/~cgpotts/manuscripts/liang-potts-semantics.pdf), Liang and Potts show us how we can use [supervised learning](https://en.wikipedia.org/wiki/Supervised_learning) to learn the weights in our scoring function.
-
-We'll be using the methodology they outline in their paper, and while I won't cover it in detail, it's worth noting that they use the multiclass hinge loss objective and optimize their weights using stochastic gradient descent (SGD). i.e.
+In [their (2015) paper](https://web.stanford.edu/~cgpotts/manuscripts/liang-potts-semantics.pdf), Liang and Potts show us how we can use [supervised learning](https://en.wikipedia.org/wiki/Supervised_learning) to learn the weights in our scoring function. We'll be using the methodology they outline in their paper, and while I won't cover it in detail, it's worth noting that they use the multiclass hinge loss objective and optimize their weights using stochastic gradient descent (SGD). i.e.
 
 TODO: Add Equation here
+      Talk about semantic & denotation loss functions (and how much data)
 
 TODO: Implement in tensorflow.js and brag about it
 
-The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the training and test examples affect the trained model's performance. Observe that the objective funtion can either optimize for semantic accuracy or denotation accuracy.
+The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the training and test examples affect the trained model's performance. 
 
 TODO: Add Sandbox here
 
@@ -125,12 +148,13 @@ TODO: Add Sandbox here
 
 Ok. Cool! Now we now know how to go from a natural language input like `"one plus one"` to its denotation `2`. However, we have to endure the tedium of defining a grammar for our parser. Ideally, we'd want to be able to learn the grammar automatically from examples.
 
-[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch.
-
-That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics (`1`, `2`, `+`, `*`, ...)?
+[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch. That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics (`1`, `2`, `+`, `*`, ...)?
 
 TODO: Insert Description of methodology here
 
 TODO: Insert Sandbox here
 
-I hope this was an informative post and that you're just as enthusiastic about semantic parsing as I am :)
+I hope this was an informative post and that you're now just as enthusiastic about semantic parsing as I am :)
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.1/ace.js"></script>
+<script src="/code/semparser/demo.js"></script>
