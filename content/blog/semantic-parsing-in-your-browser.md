@@ -67,9 +67,70 @@ Our functional programming language is a relatively simple, and need only suppor
 
 <div class="term" id="lisp_js"></div>
 
-
 I would definitely recommend Peter's tutorial to anyone who wants a better understanding of what's going on behind the scenes. You can also check out the source code for my implementation here: (LINK HERE!). Writing a Lisp interpreter was far simpler than I had imagined, and gave me a more informed appreciation of how interpreters and compilers go about the business of making my code run.
 
 ## Parsing to LispJS
 
-We really only
+Now that we've decided on an intermediate representation, we need to find a way of parsing our sentences into their corresponding semantic representations. That is, how do we parse a sentence like `"one plus one times two"` into `(+ 1 (* 1 2))`?
+
+Parsing, in this case, involves recognizing a sentence and assigning a syntactic structure to it. This syntactic structureis most often encoded in the form of a [context free grammar (CFG)](https://en.wikipedia.org/wiki/Context-free_grammar), a formal grammar that consists of a set of **compositional rules** that express the way symbols of the language can be grouped and ordered together, and a **lexicon** of words and symbols.
+
+We will be parsing using the CKY Algorithm, a [chart parsing](https://en.wikipedia.org/wiki/Chart_parser) algorithm and dynamic-programming based approach to parsing. One constraint of this method is that the grammar be in [Chomsky Normal Form](https://en.wikipedia.org/wiki/Chomsky_normal_form) (or CNF). Rules in CNF are of the form:
+
+1. `A → BC`, or
+2. `A → a`, or
+3. `S → ε`,
+
+where `A`,`B`, and `C` are categories (non-terminal symbols), `a` is a word (terminal symbol), `S` is the start symbol, and `ε` denotes the empty string. This implies that in *lexical rules*, the right hand side (RHS) must consist of exactly one terminal symbol, and in *compositional rules*, the RHS must consist of exactly two categories (non-terminals).
+
+I won't go into the details of implementation here: So if you aren't already familiar with syntactic parsing, I would recommend reading through chapters 10 & 11 of [Jurafsky & Martin's Speech and Language Processing (3rd ed.)](https://web.stanford.edu/~jurafsky/slp3/) (chapters 12 & 13 in the 2nd edition).
+
+The rules we'll be using for the rest of this article are listed in the sandbox below. Feel free to play around with them and see the effect they have on the parser's results.
+
+TODO: Add Sandbox here!
+
+## Handling Ambiguity
+
+Dealing with **ambiguity** is one of the biggest challenges of computational linguistics, and indeed, syntactic parsing is no exception. If you messed around with the sandbox above, you'll have noticed that certain sentences (like `"minus three plus two"` or `"four times two plus one"`) produce more than one valid parse. The problem is that many sentences in natural language have multiple grammatically correct but semantically unreasonable parses.
+
+**So how do we figure out which parse is correct?**
+
+One solution is to rank candidate parses with a linear scoing function. Each parse's score is calculated by finding the weighted sum of a number of real-valued features. These features should encode important characteristics of the candidate parses and allow us to differentiate the good from the bad.
+
+TODO: Add equation
+
+We must therefore define features that will allow us to pick out semantically correct parses. One feature (and probably the most obvious to most readers) is one that accounts for [operator precedence](https://en.wikipedia.org/wiki/Order_of_operations). We'll implement this feature by counting the number of times each possible pair of operators appear in sequence. e.g. `(+ (* 1 2))` would produce `{['+','*']: 1, ['*', '+']: 0, ...}`.
+
+We can then adjust the values of the weights so that incorrect operator order is penalized. You can play around with the weights in the sandbox below so that the correct parse is assigned the highest score.
+
+TODO: Add weight sandbox
+
+## Learning Parse Scores
+
+Obviously, it's rather tedious to manually assign weights to each feature, even for a smaller feature set as our own. We should therefore devise some way of learning the weights automatically from training data rather than setting them ourselves.
+
+In [Bringing machine learning and compositional semantics together](https://web.stanford.edu/~cgpotts/manuscripts/liang-potts-semantics.pdf), Liang and Potts show us how we can use [supervised learning](https://en.wikipedia.org/wiki/Supervised_learning) to learn the weights in our scoring function.
+
+We'll be using the methodology they outline in their paper, and while I won't cover it in detail, it's worth noting that they use the multiclass hinge loss objective and optimize their weights using stochastic gradient descent (SGD). i.e.
+
+TODO: Add Equation here
+
+TODO: Implement in tensorflow.js and brag about it
+
+The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the training and test examples affect the trained model's performance. Observe that the objective funtion can either optimize for semantic accuracy or denotation accuracy.
+
+TODO: Add Sandbox here
+
+## Learning a Lexicon
+
+Ok. Cool! Now we now know how to go from a natural language input like `"one plus one"` to its denotation `2`. However, we have to endure the tedium of defining a grammar for our parser. Ideally, we'd want to be able to learn the grammar automatically from examples.
+
+[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch.
+
+That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics (`1`, `2`, `+`, `*`, ...)?
+
+TODO: Insert Description of methodology here
+
+TODO: Insert Sandbox here
+
+I hope this was an informative post and that you're just as enthusiastic about semantic parsing as I am :)
