@@ -1,3 +1,19 @@
+/* lisp.js: JavaScript implementation of Scheme-Like language
+    Copyright (C) 2018  Muuo Wambua
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+
 var Symbol = String
 var List = Array
 
@@ -160,7 +176,7 @@ jQuery(function($, undefined) {
             try {
                 var val = lEval(lParse(command))
                 if (val !== undefined) {
-                    this.echo(lispstr(val));
+                    this.echo("[[g;white;black]" + lispstr(val) + "]");
                 }
             } catch(e) {
                 this.error(new String(e));
@@ -169,40 +185,13 @@ jQuery(function($, undefined) {
            this.echo('');
         }
     }, {
-        greetings: 'LispJS Interpreter',
+        greetings: '[[b;;black]LispJS Interpreter]',
         name: 'lisp_js',
 		height: 200,
-        prompt: 'lisp.js> '
+        prompt: '> '
 	});
 
 	/* Some Examples */
 	$('#lisp_js').terminal().exec('(+ 1 (+ (* (* 4 5) 2) (- 5 4)))')
 	$('#lisp_js').terminal().exec('(sin (/ PI 2))');;
 });
-
-
-
-/* JS Repl */
-/*
-jQuery(function($, undefined) {
-    $('#termy').terminal(function(command) {
-        if (command !== '') {
-            try {
-                var result = window.eval(command);
-                if (result !== undefined) {
-                    this.echo(new String(result));
-                }
-            } catch(e) {
-                this.error(new String(e));
-            }
-        } else {
-           this.echo('');
-        }
-    }, {
-        greetings: 'JavaScript Interpreter',
-        name: 'js_demo',
-        height: 200,
-        prompt: 'js> '
-    });
-});
-*/

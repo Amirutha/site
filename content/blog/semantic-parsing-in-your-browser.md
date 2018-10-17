@@ -13,19 +13,23 @@ draft: true
 }
 .editor {
     margin:auto;
-    margin-bottom:1em;
+    margin-bottom: 1em;
     width: 60%;
     border: 2px double #aaa;
     border-radius: 5px;
-    font-size: 12px;
     height: inherit;
+    font-size: 12px;
 }
 .column {
-  width: 50%;
+  width: 49%;
+  margin: 0.5%;
   float: left;
 }
 .row {
+  margin: auto;
+  width: 90%;
   height: 200px;
+  margin-bottom: 1em;
 }
 .row:after {
   content: "";
@@ -36,12 +40,21 @@ draft: true
   .term .editor {
       width: 90%;
   }
+  .column {
+    width: 100%;
+    margin:auto;
+    margin-bottom: 1em;
+  }
+  .row {
+    height: none;
+  }
 }
 </style>
 <script src="/code/semparser/vendor/js/jquery-1.7.1.min.js"></script>
 <script src="/code/semparser/vendor/js/jquery.terminal-1.21.0.min.js"></script>
 <script src="/code/semparser/vendor/js/jquery.mousewheel-min.js"></script>
 <!-- <script src="vendor/js/tf.js"></script> -->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_CHTML' async></script>
 <link href="/code/semparser/vendor/css/jquery.terminal-1.21.0.min.css" rel="stylesheet"/>
 <script src="/code/semparser/lisp.js"></script>
 <script src="/code/semparser/model.js"></script>
@@ -55,6 +68,10 @@ For a while now, I've been drawn to the work being done in semantic parsing. Sem
 -->
 
 For a while now, I've been drawn to the work being done in semantic parsing. Semantic parsing involves mapping natural language expressions into formal representations of their meaning. These formal represenations can take a variety of forms, but are typically in some form that do not require knowledge of natural language to be understood. e.g. `one plus one → 2`, `一加三 → 4`, `the 45th president of the united states → Donald J. Trump`, `monkey → 🐒`<!-- &#x1f412; -->
+
+I think that semantic parsing could get more love, and I think that the web is the best platform to spread the love. If all goes well, this will be the first in a series of posts. They should get more and more interesting as I learn more. :)
+
+*Note: All the code used in the demonstrations here is free to use under the [GNU Affero General Public License V3](https://www.gnu.org/licenses/agpl-3.0.en.html).*
 
 **So we want to build a semantic parser? What will it do?**
 
@@ -98,21 +115,23 @@ Parsing, in this case, involves recognizing a sentence and assigning a syntactic
 
 We will be parsing using the CKY Algorithm, a [chart parsing](https://en.wikipedia.org/wiki/Chart_parser) algorithm and dynamic-programming based approach to parsing. One constraint of this method is that the grammar be in [Chomsky Normal Form](https://en.wikipedia.org/wiki/Chomsky_normal_form) (or CNF). Rules in CNF are of the form:
 
-1. `A → BC`, or
-2. `A → a`, or
-3. `S → ε`,
+1. \\( A \rightarrow BC \\), or
+2. \\( A \rightarrow a \\), or
+3. \\( S \rightarrow \epsilon \\),
 
-where `A`,`B`, and `C` are categories (non-terminal symbols), `a` is a word (terminal symbol), `S` is the start symbol, and `ε` denotes the empty string. This implies that in *lexical rules*, the right hand side (RHS) must consist of exactly one terminal symbol, and in *compositional rules*, the RHS must consist of exactly two categories (non-terminals).
+where \\(A\\), \\(B\\), and \\(C\\) are categories (non-terminal symbols), \\(a\\) is a word (terminal symbol), \\(S\\) is the start symbol, and \\(\epsilon\\) denotes the empty string. This implies that in *lexical rules*, the right hand side (RHS) must consist of exactly one terminal symbol, and in *compositional rules*, the RHS must consist of exactly two categories (non-terminals).
+
+This means that if we have numerals of category `$E` and binary operators of category `$BinOp`, we can not define rules like `$E → $E $BinOp $E`. Rather we must split it into two rules: `$EBO → $E $BinOp`, and `$E → $E $EBO`.
 
 I won't go into the details of implementation here: So if you aren't already familiar with syntactic parsing, I would recommend reading through chapters 10 & 11 of [Jurafsky & Martin's Speech and Language Processing (3rd ed.)](https://web.stanford.edu/~jurafsky/slp3/) (chapters 12 & 13 in the 2nd edition).
 
-The rules we'll be using for the rest of this article are listed in the sandbox below. Feel free to play around with them and see the effect they have on the parser's results.
+The rules we'll be using for most of this article are listed in the sandbox below. Feel free to play around with them and see the effect they have on the parser's results:
 
-<div class="row">
-<div class="editor column" id="examples"></div>
-<div class="term column" id="thingy_js"></div>
+<div class="row" style="height:380px">
+<div class="editor column" id="grammar"></div>
+<div class="term column" id="parser"></div>
 </div>
-<p>
+
 ## Handling Ambiguity
 
 Dealing with **ambiguity** is one of the biggest challenges of computational linguistics, and indeed, syntactic parsing is no exception. If you messed around with the sandbox above, you'll have noticed that certain sentences (like `"minus three plus two"` or `"four times two plus one"`) produce more than one valid parse. The problem is that many sentences in natural language have multiple grammatically correct but semantically unreasonable parses.
@@ -121,28 +140,36 @@ Dealing with **ambiguity** is one of the biggest challenges of computational lin
 
 One solution is to rank candidate parses with a linear scoing function. Each parse's score is calculated by finding the weighted sum of a number of real-valued features. These features should encode important characteristics of the candidate parses and allow us to differentiate the good from the bad.
 
-TODO: Add equation
+Each candidate parse \\(y\\) and its input \\(x\\) is mapped to a \\(d\\)-dimensional feature vector, \\(\phi(x,y) \in {\mathbb{R}}^{d}\\), and a a vector of weights, \\(\textbf{w}\\).
+
+$$ Score\_{w}(x, y) = \textbf{w} \cdot \phi (x, y) = \sum\_{j=1}^{d}w\_{j} \phi {(x,y)}\_j $$
 
 We must therefore define features that will allow us to pick out semantically correct parses. One feature (and probably the most obvious to most readers) is one that accounts for [operator precedence](https://en.wikipedia.org/wiki/Order_of_operations). We'll implement this feature by counting the number of times each possible pair of operators appear in sequence. e.g. `(+ (* 1 2))` would produce `{['+','*']: 1, ['*', '+']: 0, ...}`.
 
 We can then adjust the values of the weights so that incorrect operator order is penalized. You can play around with the weights in the sandbox below so that the correct parse is assigned the highest score.
 
-TODO: Add weight sandbox
+<div class="row">
+<div class="editor column" id="weights"></div>
+<div class="term column" id="dumb-model"></div>
+</div>
 
 ## Learning Parse Scores
 
 Obviously, it's rather tedious to manually assign weights to each feature, even for a smaller feature set as our own. We should therefore devise some way of learning the weights automatically from training data rather than setting them ourselves.
 
-In [their (2015) paper](https://web.stanford.edu/~cgpotts/manuscripts/liang-potts-semantics.pdf), Liang and Potts show us how we can use [supervised learning](https://en.wikipedia.org/wiki/Supervised_learning) to learn the weights in our scoring function. We'll be using the methodology they outline in their paper, and while I won't cover it in detail, it's worth noting that they use the multiclass hinge loss objective and optimize their weights using stochastic gradient descent (SGD). i.e.
+In [their (2015) paper](https://web.stanford.edu/~cgpotts/manuscripts/liang-potts-semantics.pdf), Liang and Potts show us how we can use [supervised learning](https://en.wikipedia.org/wiki/Supervised_learning) to learn the weights in our scoring function. We'll be using the methodology they outline in their paper, and while I won't cover it in detail, it's worth noting that they use the multiclass hinge loss objective and optimize their weights using stochastic gradient descent (SGD). i.e. Their objective is provided below:
 
-TODO: Add Equation here
+$$ min\_{\textbf{w} \in \mathbb{R}^{d}} \sum\_{(x, y) \in \mathcal{D}} max\_{y^{\prime} \in \mathcal{Y}} \left \[ Score\_{\textbf{w}}(x, y^{\prime}) + c(y, y^{\prime})  \right \] - Score\_{\textbf{w}}(x, y),$$
+
+where \\(D\\) is a set of \\((x,y)\\) training examples and \\(c(y, y^{\prime})\\) is the cost for predicting \\(y^{\prime}\\) when the correct output is \\(y\\). Usually, \\(c(y, y^{\prime} = 0\\) if \\(y = y^{\prime}\\), and 1 otherwise.
       Talk about semantic & denotation loss functions (and how much data)
-
-TODO: Implement in tensorflow.js and brag about it
 
 The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the training and test examples affect the trained model's performance. 
 
-TODO: Add Sandbox here
+<div class="row" style="height:320px">
+<div class="editor column" id="examples"></div>
+<div class="term column" id="smart-model"></div>
+</div>
 
 ## Learning a Lexicon
 
@@ -152,7 +179,10 @@ Ok. Cool! Now we now know how to go from a natural language input like `"one plu
 
 TODO: Insert Description of methodology here
 
-TODO: Insert Sandbox here
+<div class="row" style="height:320px">
+<div class="editor column" id="swahili"></div>
+<div class="term column" id="slow-model"></div>
+</div>
 
 I hope this was an informative post and that you're now just as enthusiastic about semantic parsing as I am :)
 
