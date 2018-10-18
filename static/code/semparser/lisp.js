@@ -1,4 +1,4 @@
-/* lisp.js: JavaScript implementation of Scheme-Like language
+/* lisp.js: JavaScript implementation of Scheme dialect
     Copyright (C) 2018  Muuo Wambua
 
     This program is free software: you can redistribute it and/or modify
@@ -168,30 +168,3 @@ function lEval(x, env=global_env) {
 		return proc(...args);
 	}
 }
-
-/* Lisp.js  Repl */
-jQuery(function($, undefined) {
-    $('#lisp_js').terminal(function(command) {
-        if (command !== '') {
-            try {
-                var val = lEval(lParse(command))
-                if (val !== undefined) {
-                    this.echo("[[g;white;black]" + lispstr(val) + "]");
-                }
-            } catch(e) {
-                this.error(new String(e));
-            }
-        } else {
-           this.echo('');
-        }
-    }, {
-        greetings: '[[b;;black]LispJS Interpreter]',
-        name: 'lisp_js',
-		height: 200,
-        prompt: '> '
-	});
-
-	/* Some Examples */
-	$('#lisp_js').terminal().exec('(+ 1 (+ (* (* 4 5) 2) (- 5 4)))')
-	$('#lisp_js').terminal().exec('(sin (/ PI 2))');;
-});

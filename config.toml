@@ -13,25 +13,19 @@ pygmentsuseclasses  = true
 pluralizelisttitles = false
 
 [permalinks]
-blog  = "blog/:slug/"
+writing  = "writing/:slug/"
 
 [[menu.main]]
-name                   = "Blog"
+name                   = "Writing"
 weight                 = -120
-identifier             = "blog"
-url                    = "blog/"
+identifier             = "writing"
+url                    = "writing/"
 
 [[menu.main]]
-name                   = "Research"
+name                   = "Publications"
 weight                 = -110
-identifier             = "research"
-url                    = "research/"
-
-[[menu.main]]
-name                   = "About"
-weight                 = -80
-identifier             = "about"
-url                    = "about/"
+identifier             = "publications"
+url                    = "publications/"
 
 
 [params]
@@ -45,7 +39,7 @@ dateformfull           = "Mon Jan 2 2006 15:04:05 EDT"
 description            = "I am... so I think...?"
 email                  = "muuo [at] cs [dot] toronto [dot] edu"
 #extracssfiles          = [ "/css/override.css" ]       # In your `static` directory, add/remove files as necessary.
-#faviconfile            = "img/leaf.ico"
+#faviconfile            = "img/favicon.ico"
 github                 = "//github.com/muuo"
 #instagram              = "//instagram.com/muuowambua"
 unsplash               = "//unsplash.com/muuo"

@@ -3,20 +3,20 @@
     <div class="container">
         <div class="content">
             {{ if .Content }}
-                <div class="markdown">
+                <div class="markdown about">
                     {{ .Content }}
                 </div>
             {{ end }}
-            {{ $totalpostscount := len (where .Data.Pages "Section" "blog") }}
+            {{ $totalpostscount := len (where .Data.Pages "Section" "writing") }}
             {{ $latestpostscount := .Site.Params.latestpostscount | default $totalpostscount }}
             {{ if gt $latestpostscount 0 }}
                 <div class="page-heading">{{ i18n "latestPosts" }}</div>
                 <ul>
-                    {{ range (first $latestpostscount (where .Data.Pages.ByPublishDate.Reverse "Section" "blog")) }}
+                    {{ range (first $latestpostscount (where .Data.Pages.ByPublishDate.Reverse "Section" "writing")) }}
                         {{ partial "li.html" . }}
                     {{ end }}
                     {{ if gt $totalpostscount $latestpostscount }}
-                        {{ range where .Site.Menus.main "Identifier" "blog" }}
+                        {{ range where .Site.Menus.main "Identifier" "writing" }}
                             <li class="post-item no-bullet">
                                 <a id="see-more" {{ printf "href=%q " .URL | safeHTMLAttr }}><span>See more&hellip;</span></a>
                             </li>

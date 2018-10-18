@@ -15,6 +15,35 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 
 /* ************************************** */
+/* LispJS REPL                            */
+/* ************************************** */
+$('#lisp_js').terminal(function(command) {
+    if (command !== '') {
+        try {
+            var val = lEval(lParse(command))
+            if (val !== undefined) {
+                this.echo("[[;white;black]" + lispstr(val) + "]");
+            }
+        } catch(e) {
+            this.error(new String(e));
+        }
+    } else {
+       this.echo('');
+    }
+}, {
+    greetings: '[[b;;black]LispJS Interpreter]',
+    name: 'lisp_js',
+    height: 200,
+    prompt: '> ',
+    enabled: false
+});
+
+/* Some Examples */
+$('#lisp_js').terminal()
+$('#lisp_js').terminal().exec('(+ 1 (+ (* (* 4 5) 2) (- 5 4)))');
+$('#lisp_js').terminal().exec('(sin (/ PI 2))');
+
+/* ************************************** */
 /* Grammar Sandbox                        */
 /* ************************************** */
 var grammarEditor = ace.edit("grammar");
@@ -67,7 +96,7 @@ $('#parser').terminal(function(command) {
                 // TODO: Pretty print the parses
                 let cnt = 0;
                 for (r of result) {
-                    this.echo("[[g;aqua;black]" + cnt +  ":]\t[[g;lightcoral;black]" + r.toString().trim() + "], [[g;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + "]");
+                    this.echo("[[b;aqua;black]" + cnt +  ":]\t[[;LightSalmon;black]" + r.toString().trim() + "], [[;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + "]");
                     cnt++;
                 }
             }
@@ -78,10 +107,11 @@ $('#parser').terminal(function(command) {
        this.echo('');
     }
 }, {
-    greetings: 'Type Sentences here to see their [[g;lightcoral;black]parses] and [[g;white;black]semantics]:',
+    greetings: 'Type Sentences here to see their [[;LightSalmon;black]parses] and [[;white;black]semantics]:',
     name: 'parser',
-    height: 380,
-    prompt: '> '
+    height: 300,
+    prompt: '> ',
+    enabled: false
 });
 $('#parser').terminal().exec("one plus one");
 $('#parser').terminal().exec("minus three plus two");
@@ -95,6 +125,8 @@ weightEditor.session.setMode("ace/mode/javascript");
 
 weightEditor.setValue(`weights = {};
 // You can manually assign weights
+// ~ is the unary 'minus' operator
+// - is the binary 'minus' operator
 weights['*,+'] = 1.0; // How many times does '*' come before '+'?
 weights['*,-'] = 1.0;
 weights['~,+'] = 1.0;
@@ -152,7 +184,7 @@ $('#dumb-model').terminal(function(command) {
                 // TODO: Pretty print the parses
                 let cnt = 0;
                 for (r of result) {
-                    this.echo("[[gb;aqua;black]" + cnt + " ([[g;chartreuse;black]" + r.score + "]" + "):]\t[[g;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + " → " + r.denotation + "]");
+                    this.echo("[[b;aqua;black]" + cnt + " ([[;chartreuse;black]" + r.score + "]" + "):]\t[[;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + " → " + r.denotation + "]");
                     cnt++;
                 }
             }
@@ -163,10 +195,11 @@ $('#dumb-model').terminal(function(command) {
        this.echo('');
     }
 }, {
-    greetings: 'Type Sentences here to see their parses [[g;chartreuse;black](And Scores)]:',
+    greetings: 'Type Sentences here to see their parses [[;chartreuse;black](And Scores)]:',
     name: 'parser',
     height: 200,
-    prompt: '> '
+    prompt: '> ',
+    enabled: false
 });
 $('#dumb-model').terminal().exec("minus three plus two");
 $('#dumb-model').terminal().exec("four times two plus two");
@@ -178,7 +211,9 @@ var exampleEditor = ace.edit("examples");
 exampleEditor.setTheme("ace/theme/xcode");
 exampleEditor.session.setMode("ace/mode/javascript");
 
-exampleEditor.setValue(`let arithmetic_examples = [
+exampleEditor.setValue(`// Examples are annotated with correct semantics and denotations
+/// However, we only use denotations to choose the correct parse
+let arithmetic_examples = [
 	new Example("one plus one",               ["+", 1, 1],            2),
 	new Example("one plus two",               ["+", 1, 2],            3),
 	new Example("one plus three",             ["+", 1, 3],            4),
@@ -221,7 +256,7 @@ $('#smart-model').terminal(async function(command) {
                 // TODO: Pretty print the parses
                 let cnt = 0;
                 for (r of result) {
-                    this.echo("[[gb;aqua;black]" + cnt + " ([[g;chartreuse;black]" + r.score + "]" + "):]\t[[g;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + " → " + r.denotation + "]");
+                    this.echo("[[b;aqua;black]" + cnt + " ([[;chartreuse;black]" + r.score + "]" + "):]\t[[;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + " → " + r.denotation + "]");
                     cnt++;
                 }
             }
@@ -232,10 +267,11 @@ $('#smart-model').terminal(async function(command) {
        this.echo('');
     }
 }, {
-    greetings: 'Type Sentences here to see their parses [[g;chartreuse;black](And Scores)]:',
+    greetings: 'Type Sentences here to see their parses [[;chartreuse;black](And Scores)]:',
     name: 'parser',
-    height: 320,
-    prompt: '> '
+    height: 260,
+    prompt: '> ',
+    enabled: false
 });
 $('#smart-model').terminal().exec("four plus four minus one");
 $('#smart-model').terminal().exec("minus three plus two");
@@ -306,7 +342,7 @@ var compositional_rules = window.eval(`(() => {
                     return compositional_rules;
                 })()`)
 
-$('#slow-model').terminal(async function(command) {
+$('#slow-model').terminal(async function(command, term) {
     if (command !== '') {
         try {
             let rawExamples = swahiliEditor.getValue();
@@ -330,20 +366,22 @@ $('#slow-model').terminal(async function(command) {
             let big_arithmetic_grammar = new Grammar(more_arithmetic_rules);
             let model = new Model(big_arithmetic_grammar, lotsaFeatures, weights, lEval);
 
+            term.pause();
             await model.learnWeights(examples, metric="denotation");
             let result = model.parse_input(command);
             if (result !== undefined) {
                 // TODO: Pretty print the parses
                 let cnt = 0;
                 for (r of result) {
-                    this.echo("[[gb;aqua;black]" + cnt + " ([[g;chartreuse;black]" + r.score + "]" + "):]\t[[g;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + " → " + r.denotation + "]");
+                    term.echo("[[b;aqua;black]" + cnt + " ([[;chartreuse;black]" + r.score + "]" + "):]\t[[;white;black]" + JSON.stringify(r.semantics).replace(/\[/g, "(").replace(/\]/g,")") + " → " + r.denotation + "]");
                     cnt++;
                     if (cnt > 4) {
-                        this.echo("[[gb;aqua;black]... " + (result.length - 4) + " more parses ...]");
+                        term.echo("[[b;aqua;black]... " + (result.length - 4) + " more parses ...]");
                         break;
                     }
                 }
             }
+            term.resume()
         } catch(e) {
             this.error(new String(e));
         }
@@ -351,9 +389,10 @@ $('#slow-model').terminal(async function(command) {
        this.echo('');
     }
 }, {
-    greetings: 'Type Sentences here to see their parses [[g;chartreuse;black](And Scores)]:',
+    greetings: 'Type Sentences here to see their parses [[;chartreuse;black](And Scores)]:',
     name: 'parser',
-    height: 320,
-    prompt: '> '
+    height: 250,
+    prompt: '> ',
+    enabled: false
 });
 //$('#slow-model').terminal().exec("moja ongeza moja");
