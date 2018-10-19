@@ -250,7 +250,12 @@ $('#smart-model').terminal(async function(command) {
             let grammar = new Grammar(arithmetic_rules);
             let weights = {};
             let model = new Model(grammar, precedenceFeatures, weights, lEval);
-            await model.learnWeights(examples, metric="denotation");
+            await model.learnWeights(examples, "denotation");
+            $("#smart-weights").html("<strong style='font-size:1rem;'>Learned weights:</strong><br>");
+            let featNames = Object.keys(model.weights).sort((a,b) => {return model.weights[b] - model.weights[a];})
+            for (feat of featNames) {
+                $("#smart-weights").append(model.weights[feat].toFixed(2) + "\t" + feat + "\n");
+            }
             let result = model.parse_input(command);
             if (result !== undefined) {
                 // TODO: Pretty print the parses
@@ -367,7 +372,12 @@ $('#slow-model').terminal(async function(command, term) {
             let model = new Model(big_arithmetic_grammar, lotsaFeatures, weights, lEval);
 
             term.pause();
-            await model.learnWeights(examples, metric="denotation");
+            await model.learnWeights(examples, "denotation");
+            $("#lexicon-weights").html("<strong style='font-size:1rem;'>Learned weights:</strong><br>");
+            let featNames = Object.keys(model.weights).sort((a,b) => {return model.weights[b] - model.weights[a];})
+            for (feat of featNames) {
+                $("#lexicon-weights").append(model.weights[feat].toFixed(2) + "\t" + feat + "\n");
+            }
             let result = model.parse_input(command);
             if (result !== undefined) {
                 // TODO: Pretty print the parses

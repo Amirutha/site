@@ -1,7 +1,7 @@
 ---
 title: "Semantic Parsing in Your Browser"
 date: 2018-10-08T15:57:49-04:00
-draft: true
+draft: false
 ---
 <style>
 .term {
@@ -25,6 +25,13 @@ draft: true
   margin: 0.5%;
   float: left;
 }
+.weights {
+  width: 50%;
+  font-size: 14px!important;
+  max-height: 200px;
+  overflow-y: scroll;
+  margin:auto;
+}
 .row {
   margin: auto;
   width: 90%;
@@ -37,6 +44,9 @@ draft: true
   clear: both;
 }
 @media (max-width: 600px) {
+  .weights {
+    width: 90%;
+  }
   .term .editor {
       width: 90%;
   }
@@ -170,29 +180,48 @@ $$ min\_{\textbf{w} \in \mathbb{R}^{d}} \sum\_{(x, y) \in \mathcal{D}} max\_{y^{
 where each \\(x\\) is an input, each \\(y\\) is a parse and \\(y^{\prime}\\) is the model's chosen parse (parse that produces the correct denotation). \\(D\\) is a set of \\((x,y)\\) training examples and \\(c(y, y^{\prime})\\) is the cost for predicting \\(y^{\prime}\\) when the correct output is \\(y\\). Usually, \\(c(y, y^{\prime} = 0)\\) if \\(y = y^{\prime}\\), and 1 otherwise.
       Talk about semantic & denotation loss functions (and how much data)
 
-The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the examples affect the parses' scores. Can you add an example that will result in the correct ranking for "minus three plus two"?
+The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the examples affect the parses' scores. Some stuff to try:
+
+  1. Can you add an example that will result in the correct ranking for "minus three plus two"?
+  2. How does using the examples provided in [`more_examples.js`](/code/semparser/more_examples.js) change the weights?
 
 <div class="row" style="height:260px">
 <div class="editor column" id="examples"></div>
 <div class="term column" id="smart-model"></div>
 </div>
+<pre class="weights" id="smart-weights"></pre>
 
 ## Learning a Lexicon
 
 Ok. Cool! Now we now know how to go from a natural language input like `"one plus one"` to its denotation `2`. However, we have to endure the tedium of defining a grammar for our parser. Ideally, we'd want to be able to learn the grammar automatically from examples.
 
-[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch. That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics (`1`, `2`, `+`, `*`, `...`) ?
+[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch. That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics? e.g. (`1`, `2`, `+`, `*`, `...`)
 
-TODO: Insert Description of methodology here
+Let's work through the solution. Say we have a bunch of examples written in Swahili:
 
-Test it out in the sanbox below. Note that the grammar induction is CPU intensive (and I need to work on forking it off to a web worker), so your browser will hang up for a little bit when you input a sentence:
+1. First, we'll tokenize the sentences and generate a vocabulary of words whose meanings we don't know. e.g. `("moja", "mbili", "ongeza", "toa", ...)`
+2. We then need to assume that we know our target denotations and the categories their corresponding tokens would map to. e.g. `$E → (1, 2, 3, 4), ($UnOp, $BinOp) → ('-', '+', '*', '/')` because all numerals belong to the `$E` category and the operators either belong to `$UnOp` or `$BinOp`
+3. Next, we can take the [cartesian product](https://en.wikipedia.org/wiki/Cartesian_product) of the categories and semantics to generate a set of new rules. e.g. `($E → "one", 1), ($E → "one", 2), ($E → "one", 3), ... ($UnOp → "one", "+"), ($UnOp → "one", "-"), ...`
+
+We can now attempt to parse our sentences with this expanded grammar. However, you'll notice that most of the rules are garbage because terminals haven't been paired with the right non-terminals and denotations. This will result in the generation large number of candidate parses. We'll need to lean heavily on our scoring function to find the correct parses.
+
+We'll need a new set of features for our scoring function to work well though: *Rule features*, a default starting point for feature engineering. There is one feature for each rule in the grammar, and its value for any parse is the number of times the rule was applied to the parse. Take a look at the learned weights after testing a sentence. We now know that there's a high likelihood that `"moja"` is denoted by `1`, `"mbili"` is denoted by `2` and etcetera. **I think that's pretty cool!**.
+
+Test some sentences in the sandbox below (e.g. `"moja toa nne ongeza tatu"`). If you have the patience, try listing examples in a new language. *(Note that our grammar is limited to the initial list of rules listed in the first sandbox)*
 
 <div class="row" style="height:250px">
 <div class="editor column" id="swahili"></div>
 <div class="term column" id="slow-model"></div>
 </div>
+<pre class="weights" id="lexicon-weights"></pre>
+
+**Performance Notes**:
+
+* Grammar induction is CPU intensive (and I need to work on forking it off to a web worker), so your browser will hang up for a little bit when you input a sentence.
+* I could speed things up by using beam search to limit the number of rules I attempt to apply to each parse.
 
 I hope this was an informative post and that you're now just as enthusiastic about semantic parsing as I am :)
+Feel free to submit any errata or thoughts to the email address provided at the bottom of the page.
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.1/ace.js"></script>
 <script src="/code/semparser/demo.js"></script>
