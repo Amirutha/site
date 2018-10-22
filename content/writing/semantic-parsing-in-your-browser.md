@@ -110,10 +110,10 @@ In this post, I'll mostly just work through what I found interesting while imple
 
 Ok. If this approach is going to work, we'll need a logical form that makes it easy to compose primitive semantic expressions into more complex ones. A really easy way of doing this is by the use of a functional programming language such as [Scheme](https://en.wikipedia.org/wiki/Scheme_(programming_language)). A program written in a functional programming language is typically made up of a nested arrangement of functions that (in a [pure](https://en.wikipedia.org/wiki/Purely_functional_programming) implementation) each have no effect on the world, and are simply a black boxes that take an input and return an output. These functional programs work in much the same way that mathematical expressions do, differing primarily in the order of operators and their arguments. e.g.
 
-1. `1 + 1` ≡ `(+ 1 1)`
+1. `(+ 1 1)` ≡ `1 + 1`
 2. `(+ (- 4 2) (* 8 5))` ≡ `(4 - 2) + 8 * 5`
 
-Our functional programming language is a relatively simple, and need only support a few simple operations (`-`, `+`, `*`, `/`) and numeric (`1`, `2`, `3`, `...`) arguments. However, since it was fun little exercise, I went ahead and implemented a mostly complete Scheme dialect using Javascript. It is based off of [Peter Norvig's execellent tutorial](http://norvig.com/lispy.html) on how to do the same thing in Python, and exposes all of the properties and methods in your browser's built-in [Math](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math) object. The terminal below will let you play around with it.
+Our functional programming language is relatively simple, and need only support a few simple operations (`-`, `+`, `*`) and numeric (`1`, `2`, `3`, `...`) arguments. However, since it was fun little exercise, I went ahead and implemented a mostly complete Scheme dialect using Javascript. It is based off of [Peter Norvig's execellent tutorial](http://norvig.com/lispy.html) on how to do the same thing in Python, and exposes all of the properties and methods in your browser's built-in [Math](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math) object. The terminal below will let you play around with it.
 
 <div class="term" id="lisp_js"></div>
 
@@ -125,7 +125,7 @@ Now that we've decided on an intermediate representation, we need to find a way 
 
 Parsing, in this case, involves recognizing a sentence and assigning a syntactic structure to it. This syntactic structure is most often encoded in the form of a [context free grammar (CFG)](https://en.wikipedia.org/wiki/Context-free_grammar), a formal grammar that consists of a set of **compositional rules** that express the way symbols of the language can be grouped and ordered together, and a **lexicon** of words and symbols.
 
-A simple example of a grammar is one in which there are: i) Two categories (prefixed with a dollar sign by convention) `$Adjective` and `$Fruit`, a lexicon of `$Adjective 🡒 Bad, $Adjective 🡒 Good, $Fruit 🡒 Orange, $Fruit 🡒 Apple` and a compositional rule `$Opinion 🡒 $Adjective $Fruit`. A parser using this grammar would then be able to determine whether or not `"Bad Apple"` qualifies as an `$Opinion`.
+A simple example of a grammar is one in which there are: i) Two categories `$Adjective` and `$Fruit` (prefixed with a dollar sign by convention), a lexicon of `$Adjective → Bad, $Adjective → Good, $Fruit → Orange, $Fruit → Apple` and a compositional rule `$Opinion → $Adjective $Fruit`. A parser using this grammar would then be able to determine whether or not `"Bad Apple"` qualifies as an `$Opinion`.
 
 We will parse our inputs using the CKY Algorithm, a [chart parsing](https://en.wikipedia.org/wiki/Chart_parser) algorithm and dynamic-programming based approach to parsing. One constraint of this method is that the grammar must in [Chomsky Normal Form](https://en.wikipedia.org/wiki/Chomsky_normal_form) (or CNF). Rules in CNF are of the form:
 
@@ -183,7 +183,7 @@ where each \\(x\\) is an input, each \\(y\\) is a parse and \\(y^{\prime}\\) is 
 The sandbox below lists out a number of training and test examples. Each example consists of a natural language input, its semantic representation and its denotation. Feel free to experiment and see how changes to the examples affect the parses' scores. Some stuff to try:
 
   1. Can you add an example that will result in the correct ranking for "minus three plus two"?
-  2. How does using the examples provided in [`more_examples.js`](/code/semparser/more_examples.js) change the weights?
+  2. How does using the examples provided in [`more_examples.js`](/code/semparser/more_examples.js) change the learned weights?
 
 <div class="row" style="height:260px">
 <div class="editor column" id="examples"></div>
@@ -195,7 +195,7 @@ The sandbox below lists out a number of training and test examples. Each example
 
 Ok. Cool! Now we now know how to go from a natural language input like `"one plus one"` to its denotation `2`. However, we have to endure the tedium of defining a grammar for our parser. Ideally, we'd want to be able to learn the grammar automatically from examples.
 
-[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch. That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics? e.g. (`1`, `2`, `+`, `*`, `...`)
+[Grammar Induction](https://en.wikipedia.org/wiki/Grammar_induction) is an active area of research and inducing a complete grammar from scratch is still fairly difficult. However, we may be able to induce our lexicon from scratch. That is, if we have a set of examples in another language, say [Kiswahili](https://en.wikipedia.org/wiki/Swahili_language), can we induce lexical rules that map Kiswahili words to their semantics? i.e. {`"moja"`, `"mbili"`, `"ongeza"`, `"mara"`} → {`1`, `2`, `+`, `*`, `...`}
 
 Let's work through the solution. Say we have a bunch of examples written in Swahili:
 
@@ -205,7 +205,7 @@ Let's work through the solution. Say we have a bunch of examples written in Swah
 
 We can now attempt to parse our sentences with this expanded grammar. However, you'll notice that most of the rules are garbage because terminals haven't been paired with the right non-terminals and denotations. This will result in the generation large number of candidate parses. We'll need to lean heavily on our scoring function to find the correct parses.
 
-We'll need a new set of features for our scoring function to work well though: *Rule features*, a default starting point for feature engineering. There is one feature for each rule in the grammar, and its value for any parse is the number of times the rule was applied to the parse. Take a look at the learned weights after testing a sentence. We now know that there's a high likelihood that `"moja"` is denoted by `1`, `"mbili"` is denoted by `2` and etcetera. **I think that's pretty cool!**.
+We'll also need a new set of features for our scoring function to work well though: **Rule features**, a default starting point for feature engineering. There is one feature for each rule in the grammar, and its value for any parse is the number of times the rule was applied to the parse. Take a look at the learned weights after testing a sentence. We now know that there's a high likelihood that `"moja"` is denoted by `1`, `"mbili"` is denoted by `2` and etcetera. **I think that's pretty cool!**.
 
 Test some sentences in the sandbox below (e.g. `"moja toa nne ongeza tatu"`). If you have the patience, try listing examples in a new language. *(Note that our grammar is limited to the initial list of rules listed in the first sandbox)*
 
